@@ -2,13 +2,14 @@ const express = require('express')
 const fs = require('fs')
 const app = express()
 
-app.use(express.urlencoded({extended: true}))
+app.use(express.json());
 
 app.get('/', (req, res) => {
     res.sendFile(`${__dirname}/public/index.html`)
 })
 
-app.post('/create-avatar', async (req, res) => {
+// Creating an avatar
+app.post('/api/avatars', async (req, res) => {
     console.log(req.body);
 
     const avatar = {
@@ -31,34 +32,16 @@ app.post('/create-avatar', async (req, res) => {
 
         await fs.writeFileSync(`${__dirname}/public/avatars.json`, JSON.stringify(avatars))
 
-        res.sendStatus(200)
+        res.status(201)
+            .set("Location", `/api/avatars/${avatar.id}`)
+            .send(avatar);
     } catch (error) {
         res.sendStatus(500)
     }
 });
 
-app.get('/avatars', async (req, res) => {
-    try {
-        const data = await fs.readFileSync(`${__dirname}/public/avatars.json`);
-        const avatars = JSON.parse(data);
-
-        const htmlList = `
-            <ul>
-                ${avatars.map(avatar => `
-                    <li>
-                        <a href="/avatar/${avatar.id}">${avatar.avatarName}</a>
-                    </li>
-                `).join('')}
-            </ul>
-        `;
-
-        res.send(htmlList)
-    } catch {
-        res.sendStatus(500)
-    }
-});
-
-app.get('/avatar/:id', async (req, res) => {
+// Changing an avatar
+app.put('/api/avatars/:id', async (req, res) => {
     try {
         const data = await fs.readFileSync(`${__dirname}/public/avatars.json`);
         const avatars = JSON.parse(data);
@@ -67,50 +50,78 @@ app.get('/avatar/:id', async (req, res) => {
 
         if (!avatar) {
             res.sendStatus(404)
+            return;
         }
 
-        const htmlTable = `
-            <table>
-                <tr>
-                    <td>Avatar Name</td>
-                    <td>${avatar.avatarName}</td>
-                </tr>
-                <tr>
-                    <td>Child Age</td>
-                    <td>${avatar.childAge}</td>
-                </tr>
-                <tr>
-                    <td>Skin Color</td>
-                    <td>${avatar.skinColor}</td>
-                </tr>
-                <tr>
-                    <td>Hairstyle</td>
-                    <td>${avatar.hairstyle}</td>
-                </tr>
-                <tr>
-                    <td>Head Shape</td>
-                    <td>${avatar.headShape}</td>
-                </tr>
-                <tr>
-                    <td>Upper Clothing</td>
-                    <td>${avatar.upperClothing}</td>
-                </tr>
-                <tr>
-                    <td>Lower Clothing</td>
-                    <td>${avatar.lowerClothing}</td>
-                </tr>
-                <tr>
-                    <td>Created At</td>
-                    <td>${avatar.createdAt}</td>
-                </tr>
-            </table>
-        `;
+        avatar.avatarName = req.body.avatarName;
+        avatar.childAge = parseInt(req.body.childAge);
+        avatar.skinColor = req.body.skinColor;
+        avatar.hairstyle = req.body.hairstyle;
+        avatar.headShape = req.body.headShape;
+        avatar.upperClothing = req.body.upperClothing;
+        avatar.lowerClothing = req.body.lowerClothing;
 
-        res.send(htmlTable);
+        await fs.writeFileSync(`${__dirname}/public/avatars.json`, JSON.stringify(avatars))
+
+        res.sendStatus(204);
     } catch {
         res.sendStatus(500)
     }
-})
+});
+
+// Deleting an avatar
+app.delete('/api/avatars/:id', async (req, res) => {
+    try {
+        const data = await fs.readFileSync(`${__dirname}/public/avatars.json`);
+        const avatars = JSON.parse(data);
+
+        const avatarIndex = avatars.findIndex(avatar => avatar.id === parseInt(req.params.id));
+
+        if (avatarIndex === -1) {
+            res.sendStatus(404);
+            return;
+        }
+
+        avatars.splice(avatarIndex, 1);
+
+        await fs.writeFileSync(`${__dirname}/public/avatars.json`, JSON.stringify(avatars))
+
+        res.sendStatus(204);
+    } catch {
+        res.sendStatus(500)
+    }
+});
+
+// Getting all avatars
+app.get('/api/avatars', async (req, res) => {
+    try {
+        const data = await fs.readFileSync(`${__dirname}/public/avatars.json`);
+        const avatars = JSON.parse(data);
+
+        res.send(avatars);
+    } catch {
+        res.sendStatus(500)
+    }
+});
+
+// Getting a single avatar
+app.get('/api/avatars/:id', async (req, res) => {
+    try {
+        const data = await fs.readFileSync(`${__dirname}/public/avatars.json`);
+        const avatars = JSON.parse(data);
+
+        const avatar = avatars.find(avatar => avatar.id === parseInt(req.params.id));
+
+        if (!avatar) {
+            res.sendStatus(404);
+            return;
+        }
+
+        res.send(avatar);
+    } catch {
+        res.sendStatus(500)
+    }
+});
 
 app.listen(3000, () => {
     console.log("Server running...")
