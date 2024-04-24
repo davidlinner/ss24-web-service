@@ -5,10 +5,11 @@ import * as fs from "fs";
 
 import {v4 as uuid} from 'uuid';
 import passport from 'passport'
-import {Strategy} from 'passport-http-bearer'
+import {BasicStrategy} from 'passport-http';
+import bcrypt from "bcrypt";
 
 import avatarSchema from "./avatar.schema.js";
-
+import {isParent, isChild} from "./roles.js";
 
 // if import.meta.url is set we take the module dir from other, otherwise from  __dirname
 const module_dir = import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : __dirname;
@@ -27,30 +28,39 @@ if (!fs.existsSync(user_file)) {
 
 const app = express()
 
-passport.use(new Strategy(
-    function (token, done) {
+passport.use(new BasicStrategy(
+    async function(userid, password, done) {
         try {
             const users = JSON.parse(fs.readFileSync(user_file, 'utf8'))
-            const user = users.find(user => user.token === token);
+            const user = users.find(user => user.userName === userid);
             if (user) {
-                done(null, user);
+                const isCorrect = await bcrypt.compare(password, user.password);
+                if(isCorrect) {
+                    done(null, user);
+                } else {
+                    done(null, false);
+                }
             } else {
                 done(null, false);
             }
         } catch (err) {
             done(err);
         }
-    }));
+    }
+));
+
 
 app.use(express.static(path.join(module_dir, 'public')))
 app.use(express.json())
-app.use(passport.authenticate('bearer', {session: false}));
+app.use(passport.authenticate('basic', {session: false}));
 
 app.get('/', function (req, res) {
     res.sendFile(`index.html`)
 })
 
-app.post('/api/avatars', (req, res) => {
+app.post('/api/avatars',
+    isParent,
+    (req, res) => {
     console.log(" POST /api/avatars")
 
     const {error, value} = avatarSchema.validate(req.body);
@@ -78,13 +88,16 @@ app.post('/api/avatars', (req, res) => {
 
 app.get(
     "/api/avatars",
+    isChild,
     (req, res) => {
         console.log(" GET /api/avatars")
         const avatarsArray = JSON.parse(fs.readFileSync(data_file, "utf8"))
         res.send(avatarsArray)
     })
 
-app.get("/api/avatars/:id", (req, res) => {
+app.get("/api/avatars/:id",
+    isChild,
+    (req, res) => {
     const avatarID = req.params.id;
     console.log(` GET /api/avatars/:${avatarID}`)
     const avatarsArray = JSON.parse(fs.readFileSync(data_file, "utf8"))
@@ -95,9 +108,10 @@ app.get("/api/avatars/:id", (req, res) => {
         res.send(avatar)
 })
 
-app.put("/api/avatars/:id", async (req, res) => {
+app.put("/api/avatars/:id",
+    isParent,
+    async (req, res) => {
     try {
-
         const {error, value} = avatarSchema.validate(req.body, {abortEarly: false});
 
         if (error) {
@@ -131,7 +145,9 @@ app.put("/api/avatars/:id", async (req, res) => {
     }
 })
 
-app.delete("/api/avatars/:id", (req, res) => {
+app.delete("/api/avatars/:id",
+    isParent,
+    (req, res) => {
     const avatarID = parseInt(req.params.id)
     console.log(` DELETE /api/avatars/:${avatarID}`)
     const avatarsArray = JSON.parse(fs.readFileSync(data_file, "utf8"))
