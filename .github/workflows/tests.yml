@@ -12,6 +12,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: my-artifact
+          name: test-output
           path: output.json
           retention-days: 5
