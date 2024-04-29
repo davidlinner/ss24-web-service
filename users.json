@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Paul",
+    "userName": "paul@home.edu",
+    "password": "$2b$10$Gh9PsyavKZ3zEI8Fi5uFeuf/VP/RdeAdqD0Mg3tvl2.X6YfM/nGuO",
+    "token": "NV2G30QH7SWDWRC4A5PX8KFJT19ILUEZ6MBO",
+    "roles": ["child"]
+  },
+  {
+    "name": "Marie",
+    "userName": "marie@home.edu",
+    "password" : "$2b$10$034hkJACJ3ltpkv5FJqqzuuXruLC4MSQINqHZ95koukdVY3kQRKsG",
+    "token": "N5UTB4SOM9IH2FAEGWWJXRL07CZKPQD186V3",
+    "roles": ["parent","child"]
+  }
+]
