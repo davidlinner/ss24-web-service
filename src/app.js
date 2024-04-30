@@ -6,8 +6,10 @@ import * as fs from "fs";
 import passport from 'passport'
 import {BasicStrategy} from 'passport-http';
 import bcrypt from "bcrypt";
+import session from 'express-session'
 
 import avatarsRouter from "./routers/avatars/avatars.router.js";
+import usersRouter from "./routers/users/users.router.js";
 
 // if import.meta.url is set we take the module dir from other, otherwise from  __dirname
 const module_dir = import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : __dirname;
@@ -22,14 +24,21 @@ if (!fs.existsSync(user_file)) {
 
 const app = express()
 
+app.use(session({
+    secret: 'any secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {secure: false}
+}));
+
 passport.use(new BasicStrategy(
-    async function(userid, password, done) {
+    async function (userid, password, done) {
         try {
             const users = JSON.parse(fs.readFileSync(user_file, 'utf8'))
             const user = users.find(user => user.userName === userid);
             if (user) {
                 const isCorrect = await bcrypt.compare(password, user.password);
-                if(isCorrect) {
+                if (isCorrect) {
                     done(null, user);
                 } else {
                     done(null, false);
@@ -43,15 +52,24 @@ passport.use(new BasicStrategy(
     }
 ));
 
+passport.serializeUser(function (user, cb) {
+    return cb(null, user);
+});
+
+passport.deserializeUser(function (user, cb) {
+    return cb(null, user);
+});
 
 app.use(express.static(path.join(module_dir, 'public')))
 app.use(express.json())
-app.use(passport.authenticate('basic', {session: false}));
+
+app.use(passport.authenticate('session'))
 
 app.get('/', function (req, res) {
     res.sendFile(`index.html`)
 })
 
 app.use('/', avatarsRouter);
+app.use('/', usersRouter);
 
 export default app;
