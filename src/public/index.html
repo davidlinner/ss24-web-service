@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Avatar creation tool</title>
+    <script src="/submit-form.js"></script>
 </head>
 <body>
 
 <h1>Avatar Creation Tool</h1>
 
-<form action="/create-avatar" method="post" style="display: flex; flex-direction: column; gap: 1rem; max-width: 10rem;">
+<form style="display: flex; flex-direction: column; gap: 1rem; max-width: 10rem;">
     <label for="avatarName">Avatar name:</label>
     <input type="text" id="avatarName" name="avatarName">
 
@@ -34,9 +35,10 @@
 
     <label for="upperClothing">Upper clothing:</label>
     <select id="upperClothing" name="upperClothing">
-        <option value="tshirt">T-shirt</option>
-        <option value="shirt">Shirt</option>
         <option value="jacket">Jacket</option>
+        <option value="shirt">Shirt</option>
+        <option value="hoodie">Hoodie</option>
+        <option value="dress">Dress</option>
     </select>
 
     <label for="lowerClothing">Lower clothing:</label>
@@ -46,8 +48,10 @@
         <option value="skirt">Skirt</option>
     </select>
 
-    <button type="submit">Create</button>
+    <button type="button" onclick="submitForm()">Create</button>
 </form>
 
 </body>
 </html>
+
+
