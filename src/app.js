@@ -6,7 +6,7 @@ import * as fs from "fs";
 import passport from 'passport'
 import {BasicStrategy} from 'passport-http';
 import bcrypt from "bcrypt";
-import session from 'express-session'
+import {Strategy as JwtStrategy, ExtractJwt} from 'passport-jwt'
 
 import avatarsRouter from "./routers/avatars/avatars.router.js";
 import usersRouter from "./routers/users/users.router.js";
@@ -23,13 +23,6 @@ if (!fs.existsSync(user_file)) {
 
 
 const app = express()
-
-app.use(session({
-    secret: 'any secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {secure: false}
-}));
 
 passport.use(new BasicStrategy(
     async function (userid, password, done) {
@@ -52,24 +45,29 @@ passport.use(new BasicStrategy(
     }
 ));
 
-passport.serializeUser(function (user, cb) {
-    return cb(null, user);
-});
 
-passport.deserializeUser(function (user, cb) {
-    return cb(null, user);
-});
+const opts = {}
+opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.secretOrKey = 'my-secret';
+
+passport.use(new JwtStrategy(opts,
+    function(jwtPayload, done) {
+        done(null, {
+            userName: jwtPayload.subject,
+            name: jwtPayload.name,
+            roles: jwtPayload.roles
+        })
+    }
+));
 
 app.use(express.static(path.join(module_dir, 'public')))
 app.use(express.json())
-
-app.use(passport.authenticate('session'))
 
 app.get('/', function (req, res) {
     res.sendFile(`index.html`)
 })
 
-app.use('/', avatarsRouter);
 app.use('/', usersRouter);
+app.use('/', avatarsRouter);
 
 export default app;

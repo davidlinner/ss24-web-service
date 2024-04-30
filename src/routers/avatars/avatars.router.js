@@ -4,6 +4,7 @@ import {v4 as uuid} from "uuid";
 import fs from "fs";
 import {Router} from 'express';
 import path from "path";
+import passport from "passport";
 
 const data_file = path.join(process.cwd(), 'avatars.json');
 if (!fs.existsSync(data_file)) {
@@ -11,6 +12,9 @@ if (!fs.existsSync(data_file)) {
 }
 
 const avatarsRouter = Router()
+
+avatarsRouter.use(passport.authenticate('jwt', { session: false }))
+
 avatarsRouter.post('/api/avatars',
     isParent,
     (req, res) => {
