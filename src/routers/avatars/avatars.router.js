@@ -48,8 +48,21 @@ avatarsRouter.get(
     isChild,
     (req, res) => {
         console.log(" GET /api/avatars")
+
+        const page = parseInt(req.query.page) || 1;
+        const size = parseInt(req.query.size) || 10;
+
         const avatarsArray = JSON.parse(fs.readFileSync(data_file, "utf8"))
-        res.send(avatarsArray)
+
+        const startIndex = (page - 1) * size;
+        const endIndex = page * size;
+
+        const avatarsPage = avatarsArray.slice(startIndex, endIndex);
+
+        res.set("X-Total-Count", avatarsArray.length.toString())
+        res.set("X-Page-Size", size.toString())
+        res.set("X-Page-Number", page.toString())
+        res.send(avatarsPage)
     })
 
 avatarsRouter.get("/api/avatars/:id",
